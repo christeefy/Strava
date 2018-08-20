@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(description='Script that limit rests in GPX fil
 
 # Add arguments
 parser.add_argument('src_dir', help='directory of the source file')
-parser.add_argument('-sc', '--save_copy', action='store_true', help='Save output file as a copy with `copy` appended to filename')
+parser.add_argument('-sc', '--save_copy', action='store_true', help='Save output file as a copy with `mod` appended to filename')
 parser.add_argument('-mrt', '--MAX_REST_TIME', type=int, default=45, help='All rest times will be capped at this value (in minutes).')
 
 # Parse arguments
@@ -33,13 +33,16 @@ times = tree.findall('.//ns:time', namespaces={'ns': namespaces['']})
 for i in range(len(times) - 1):
     curr_time = datetime.datetime.strptime(times[i].text, '%Y-%m-%dT%H:%M:%SZ')
     next_time = datetime.datetime.strptime(times[i + 1].text, '%Y-%m-%dT%H:%M:%SZ')
+
+    # Calculate time diff
+    time_diff = (next_time - curr_time).seconds // 60
     
-    if (next_time - curr_time).seconds // 60 > args.MAX_REST_TIME:
-        next_time -= datetime.timedelta(minutes=args.MAX_REST_TIME)
+    if time_diff > args.MAX_REST_TIME:
+        next_time -= datetime.timedelta(minutes=time_diff - args.MAX_REST_TIME)
         times[i + 1].text = next_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 # Save file
 if args.save_copy:
-    tree.write(args.src_dir.split('.gpx')[0] + '_copy.gpx')
+    tree.write(args.src_dir.split('.gpx')[0] + '_mod.gpx')
 else:
     tree.write(args.src_dir)
